@@ -61,12 +61,15 @@ bool BaseObject::inited()
 #ifdef STEP_THREAD_SAFE
         OpenThreads::ScopedPointerLock<OpenThreads::Mutex> lock(getRefMutex());
 #endif
-        m_inited = true; // set this to break cycle when inverse attribute inits
-        bool inited = init();
-        if (inited)
+        if (!m_inited)
         {
-            delete m_args;
-            m_args = 0;
+           m_inited = true; // set this to break cycle when inverse attribute inits
+           bool inited = init();
+           if (inited)
+           {
+              delete m_args;
+              m_args = 0;
+           }
         }
     }
 

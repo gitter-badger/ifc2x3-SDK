@@ -88,7 +88,7 @@ namespace Step {
 
 #ifdef OSG_USE_REF_PTR_IMPLICIT_OUTPUT_CONVERSION
         // implicit output conversion
-        operator T*() const { return static_cast<T*>(_ptr); }
+        operator T*() const { return reinterpret_cast<T*>(_ptr); }
 #else
         // comparison operators for RefPtr.
         bool operator == (const RefPtr& rp) const { return (_ptr==rp._ptr); }
@@ -266,11 +266,11 @@ namespace Step {
         // ensures the objects stay alive throughout all access to it.
 
         // Throw an error if _reference is null?
-        inline T& operator*() const { return *_ptr; }
-        inline T* operator->() const { return _ptr; }
+        inline T& operator*() const { return *static_cast<T*>(_ptr); }
+        inline T* operator->() const { return static_cast<T*>(_ptr); }
 
         // get the raw C pointer
-        inline T* get() const { return (_reference.valid() && _reference->getObserverdObject()!=0) ? _ptr : 0; }
+        inline T* get() const { return (_reference.valid() && _reference->getObserverdObject()!=0) ? static_cast<T*>(_ptr) : 0; }
 
         inline bool operator!() const   { return get() == 0; }
         inline bool valid() const       { return get() != 0; }
