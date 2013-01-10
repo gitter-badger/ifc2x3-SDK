@@ -25,8 +25,7 @@
 
 #ifdef STEP_THREAD_SAFE
 #  include <osg/Referenced>
-#  include <osg/ref_ptr>
-#  include <osg/observer_ptr>
+#  include <osg/Observer>
 #endif
 
 namespace Step {
@@ -48,114 +47,238 @@ namespace Step {
     };
 
 
-    template<class T> struct RefPtr : public osg::ref_ptr<T> {
+    /** Smart pointer for handling referenced counted objects.*/
+    template<class T>
+    class RefPtr
+    {
+    public:
+        typedef T element_type;
 
-        RefPtr() {}
-        RefPtr(T* ptr) : osg::ref_ptr<T>(ptr) {}
-        RefPtr(const RefPtr& rp) : osg::ref_ptr<T>(rp.get()) {}
-        template<class Other> RefPtr(const RefPtr<Other>& rp) : osg::ref_ptr<T>(osg::ref_ptr<Other>(rp.get())) {}
-        RefPtr(osg::observer_ptr<T>& optr) : osg::ref_ptr<T>(optr) {}
-        ~RefPtr() {}
+        RefPtr() : _ptr(0) {}
+        RefPtr(Referenced* ptr) : _ptr(ptr) { if (_ptr) _ptr->ref(); }
+        RefPtr(const RefPtr& rp) : _ptr(rp._ptr) { if (_ptr) _ptr->ref(); }
+        template<class Other> RefPtr(const RefPtr<Other>& rp) : _ptr(rp._ptr) { if (_ptr) _ptr->ref(); }
+
+        ~RefPtr() { if (_ptr) _ptr->unref();  _ptr = 0; }
 
         RefPtr& operator = (const RefPtr& rp)
         {
-            osg::ref_ptr<T>::operator =(rp);
+            assign(rp);
             return *this;
         }
 
         template<class Other> RefPtr& operator = (const RefPtr<Other>& rp)
         {
-            osg::ref_ptr<T>::operator =(rp.get());
+            assign(rp);
             return *this;
         }
 
         inline RefPtr& operator = (T* ptr)
         {
-            osg::ref_ptr<T>::operator =(ptr);
-            return *this;
-        }
-
-        template<class Other> RefPtr& operator = (Other *ptr)
-        {
-            osg::ref_ptr<T>::operator =(dynamic_cast<T*>(ptr));
+            if (_ptr==ptr) return *this;
+            osg::Referenced* tmp_ptr = _ptr;
+            _ptr = ptr;
+            if (_ptr) _ptr->ref();
+            // unref second to prevent any deletion of any object which might
+            // be referenced by the other object. i.e rp is child of the
+            // original _ptr.
+            if (tmp_ptr) tmp_ptr->unref();
             return *this;
         }
 
 #ifdef OSG_USE_REF_PTR_IMPLICIT_OUTPUT_CONVERSION
         // implicit output conversion
-        operator T*() const { return osg::ref_ptr<T>::get(); }
+        operator T*() const { return static_cast<T*>(_ptr); }
+#else
+        // comparison operators for RefPtr.
+        bool operator == (const RefPtr& rp) const { return (_ptr==rp._ptr); }
+        bool operator == (const T* ptr) const { return (_ptr==ptr); }
+        friend bool operator == (const T* ptr, const RefPtr& rp) { return (ptr==rp._ptr); }
+
+        bool operator != (const RefPtr& rp) const { return (_ptr!=rp._ptr); }
+        bool operator != (const T* ptr) const { return (_ptr!=ptr); }
+        friend bool operator != (const T* ptr, const RefPtr& rp) { return (ptr!=rp._ptr); }
+
+        bool operator < (const RefPtr& rp) const { return (_ptr<rp._ptr); }
+
+
+        // follows is an implmentation of the "safe bool idiom", details can be found at:
+        //   http://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Safe_bool
+        //   http://lists.boost.org/Archives/boost/2003/09/52856.php
+
+    private:
+        typedef T* RefPtr::*unspecified_bool_type;
+
+    public:
+        // safe bool conversion
+        operator unspecified_bool_type() const { return valid()? &RefPtr::_ptr : 0; }
 #endif
 
-        T& operator*() const { return *get(); }
-        T* operator->() const { return get(); }
-        T* get() const { return osg::ref_ptr<T>::get(); }
+        T& operator*() const { return *static_cast<T*>(_ptr); }
+        T* operator->() const { return static_cast<T*>(_ptr); }
+        T* get() const { return static_cast<T*>(_ptr); }
 
-        bool operator!() const   { return get()==0; } // not required
-        bool valid() const       { return get()!=0; }
+        bool operator!() const   { return _ptr==0; } // not required
+        bool valid() const       { return _ptr!=0; }
 
-        T* release() { return osg::ref_ptr<T>::release(); }
+        T* release() {
+            T* tmp=static_cast<T*>(_ptr);
+            if (_ptr)
+                _ptr->unref_nodelete();
+            _ptr=0;
+            return tmp;
+        }
 
-        void swap(RefPtr& rp) {osg::ref_ptr<T>::swap(rp); }
+        void swap(RefPtr& rp) { T* tmp=_ptr; _ptr=rp._ptr; rp._ptr=tmp; }
 
+    private:
+
+        template<class Other> void assign(const RefPtr<Other>& rp)
+        {
+            if (_ptr==rp._ptr) return;
+            osg::Referenced* tmp_ptr = _ptr;
+            _ptr = rp._ptr;
+            if (_ptr) _ptr->ref();
+            // unref second to prevent any deletion of any object which might
+            // be referenced by the other object. i.e rp is child of the
+            // original _ptr.
+            if (tmp_ptr) tmp_ptr->unref();
+        }
+
+        template<class Other> friend class RefPtr;
+
+        osg::Referenced* _ptr;
     };
 
-    template<class T> struct ObsPtr : public osg::observer_ptr<T> {
-        ObsPtr() {}
-        ObsPtr(const RefPtr<T>& rp) : osg::observer_ptr<T>(rp.get()) {}
-        ObsPtr(T* rp) : osg::observer_ptr<T>(rp) {}
+    /** Smart pointer for observed objects, that automatically set pointers to them to null when they are deleted.
+      * To use the ObsPtr<> robustly in multi-threaded applications it is recommend to access the pointer via
+      * the lock() method that passes back a RefPtr<> that safely takes a reference to the object to prevent deletion
+      * during usage of the object.  In certain conditions it may be safe to use the pointer directly without using lock(),
+      * which will confer a perfomance advantage, the conditions are:
+      *   1) The data structure is only accessed/deleted in single threaded/serial way.
+      *   2) The data strucutre is guarenteed by high level management of data strucutures and threads which avoid
+      *      possible situations where the ObsPtr<>'s object may be deleted by one thread whilst being accessed
+      *      by another.
+      * If you are in any doubt about whether it is safe to access the object safe then use the
+      * RefPtr<> ObsPtr<>.lock() combination. */
+    template<class T>
+    class ObsPtr
+    {
+    public:
+        typedef T element_type;
+        ObsPtr() : _reference(0), _ptr(0) {}
 
-        ObsPtr(const ObsPtr& wp) : osg::observer_ptr<T>(wp.get()) {}
+        /**
+         * Create a ObsPtr from a RefPtr.
+         */
+        ObsPtr(const RefPtr<T>& rp)
+        {
+            _reference = rp.valid() ? rp->getOrCreateObserverSet() : 0;
+            _ptr = (_reference.valid() && _reference->getObserverdObject()!=0) ? rp.get() : 0;
+        }
 
-        ~ObsPtr(){}
+        /**
+         * Create a ObsPtr from a raw pointer. For compatibility;
+         * the result might not be lockable.
+         */
+        ObsPtr(T* rp)
+        {
+            _reference = rp ? rp->getOrCreateObserverSet() : 0;
+            _ptr = (_reference.valid() && _reference->getObserverdObject()!=0) ? rp : 0;
+        }
+
+        ObsPtr(const ObsPtr& wp) :
+            _reference(wp._reference),
+            _ptr(wp._ptr)
+        {
+        }
+
+        ~ObsPtr()
+        {
+        }
 
         ObsPtr& operator = (const ObsPtr& wp)
         {
-            osg::observer_ptr<T>::operator =(wp);
+            if (&wp==this) return *this;
+
+            _reference = wp._reference;
+            _ptr = wp._ptr;
             return *this;
         }
 
         ObsPtr& operator = (const RefPtr<T>& rp)
         {
-            osg::observer_ptr<T>::operator =(rp);
+            _reference = rp.valid() ? rp->getOrCreateObserverSet() : 0;
+            _ptr = (_reference.valid() && _reference->getObserverdObject()!=0) ? rp.get() : 0;
             return *this;
         }
 
         ObsPtr& operator = (T* rp)
         {
-            osg::observer_ptr<T>::operator =(rp);
+            _reference = rp ? rp->getOrCreateObserverSet() : 0;
+            _ptr = (_reference.valid() && _reference->getObserverdObject()!=0) ? rp : 0;
             return *this;
         }
 
+        /**
+         * Assign the ObsPtr to a RefPtr. The RefPtr will be valid if the
+         * referenced object hasn't been deleted and has a ref count > 0.
+         */
         bool lock(RefPtr<T>& rptr) const
         {
-            return osg::observer_ptr<T>::lock(rptr);
+            if (!_reference)
+            {
+                rptr = 0;
+                return false;
+            }
+
+            Referenced* obj = _reference->addRefLock();
+            if (!obj)
+            {
+                rptr = 0;
+                return false;
+            }
+
+            rptr = _ptr;
+            obj->unref_nodelete();
+            return rptr.valid();
         }
 
         /** Comparison operators. These continue to work even after the
          * observed object has been deleted.
          */
-        bool operator == (const ObsPtr& wp) const { return osg::observer_ptr<T>::operator ==(wp); }
-        bool operator != (const ObsPtr& wp) const { return osg::observer_ptr<T>::operator !=(wp); }
-        bool operator < (const ObsPtr& wp) const { return osg::observer_ptr<T>::operator <(wp); }
-        bool operator > (const ObsPtr& wp) const { return osg::observer_ptr<T>::operator >(wp); }
+        bool operator == (const ObsPtr& wp) const { return _reference == wp._reference; }
+        bool operator != (const ObsPtr& wp) const { return _reference != wp._reference; }
+        bool operator < (const ObsPtr& wp) const { return _reference < wp._reference; }
+        bool operator > (const ObsPtr& wp) const { return _reference > wp._reference; }
+
+        // Non-strict interface, for compatibility
+        // comparison operator for const T*.
+        inline bool operator == (const T* ptr) const { return _ptr == ptr; }
+        inline bool operator != (const T* ptr) const { return _ptr != ptr; }
+        inline bool operator < (const T* ptr) const { return _ptr < ptr; }
+        inline bool operator > (const T* ptr) const { return _ptr > ptr; }
 
         // Convenience methods for operating on object, however, access is not automatically threadsafe.
         // To make thread safe, one should either ensure at a high level
         // that the object will not be deleted while operating on it, or
-        // by using the observer_ptr<>::lock() to get a ref_ptr<> that
+        // by using the ObsPtr<>::lock() to get a RefPtr<> that
         // ensures the objects stay alive throughout all access to it.
 
         // Throw an error if _reference is null?
-        inline T& operator*() const { return *get(); }
-        inline T* operator->() const { return get(); }
+        inline T& operator*() const { return *_ptr; }
+        inline T* operator->() const { return _ptr; }
 
         // get the raw C pointer
-        inline T* get() const { return osg::observer_ptr<T>::get(); }
+        inline T* get() const { return (_reference.valid() && _reference->getObserverdObject()!=0) ? _ptr : 0; }
 
         inline bool operator!() const   { return get() == 0; }
         inline bool valid() const       { return get() != 0; }
 
+    protected:
 
+        RefPtr<osg::ObserverSet>   _reference;
+        Referenced*                _ptr;
     };
 #else
 
