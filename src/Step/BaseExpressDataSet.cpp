@@ -178,7 +178,7 @@ void BaseExpressDataSet::instantiateAll()
     {
         if (it->second->isOfType(BaseSPFObject::getClassType()))
         {
-            LOG_DEBUG("Instantiating #" << it->first)
+            LOG_DEBUG("Instantiating #" << it->first);
             // Get the appropriate allocate function
             AllocateFuncType
                     allocFunc =

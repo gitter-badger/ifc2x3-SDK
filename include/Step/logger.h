@@ -17,6 +17,8 @@
 #ifndef Step_logger_h
 #define Step_logger_h
 
+#include <Step/Config.h>
+
 // Using log4cplus
 #ifdef USE_LOG4CPLUS
 #include <Step/StepExport.h>

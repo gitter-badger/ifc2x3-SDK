@@ -25,6 +25,10 @@ if(STEP_THREAD_SAFE)
     target_link_libraries(Step debug ${osg_LIBRARY_DEBUG} optimized ${osg_LIBRARY_RELEASE} ${OPENTHREADS_LIBRARIES})
 endif()
 
+if(USE_LOG4CPLUS)
+    target_link_libraries(Step ${LOG4CPLUS_LIBRARIES})
+endif()
+
 GENERATE_EXPORT_HEADER( Step EXPORT_FILE_NAME Step/StepExport.h STATIC_DEFINE IFC2X3_STATIC)
 
 configure_file(../../include/Step/Config.h.in Step/Config.h)

@@ -12,5 +12,6 @@
 
 
 #cmakedefine STEP_THREAD_SAFE
+#cmakedefine USE_LOG4CPLUS
 
 #endif // STEP_CONFIG_H

@@ -134,6 +134,17 @@ if(STEP_THREAD_SAFE)
    endif()
 endif()
 
+option(USE_LOG4CPLUS "Use log4cplus as a logger, /!\ introduces log4cplus dependency" OFF)
+if(USE_LOG4CPLUS)
+   find_package(Log4cplus)
+   if(NOT LOG4CPLUS_FOUND)
+      message(WARNING "log4cplus not found, disabling USE_LOG4CPLUS")
+      set(USE_LOG4CPLUS OFF FORCE)
+   else()
+      include_directories(${USE_LOG4CPLUS_INCLUDE_DIR})
+   endif()
+endif()
+
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_subdirectory(src)
