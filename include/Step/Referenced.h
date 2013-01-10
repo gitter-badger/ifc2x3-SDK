@@ -1,11 +1,11 @@
-// IFC SDK : IFC2X3 C++ Early Classes  
+// IFC SDK : IFC2X3 C++ Early Classes
 // Copyright (C) 2009 CSTB
 //
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
 // version 2.1 of the License, or (at your option) any later version.
-// The full license is in Licence.txt file included with this 
+// The full license is in Licence.txt file included with this
 // distribution or is available at :
 //     http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
 //
@@ -17,20 +17,147 @@
 #ifndef Step_Referenced_h
 #define Step_Referenced_h
 
-#include "StepExport.h"
-
-#include "ClassType.h"
+#include <Step/StepExport.h>
+#include <Step/Config.h>
+#include <Step/ClassType.h>
 
 #include <vector>
 
 #ifdef STEP_THREAD_SAFE
-#include <OpenThreads/ScopedLock>
-#include <OpenThreads/Mutex>
+#  include <osg/Referenced>
+#  include <osg/ref_ptr>
+#  include <osg/observer_ptr>
 #endif
 
 namespace Step {
 
     class Observer;
+
+#ifdef STEP_THREAD_SAFE
+    class STEP_EXPORT Referenced : public osg::Referenced
+    {
+        ClassType_definitions();
+
+    public:
+
+        Referenced(){}
+
+        explicit Referenced(bool threadSafeRefUnref)  : osg::Referenced(threadSafeRefUnref) {}
+
+        Referenced(const Referenced&ref) : osg::Referenced(ref) {}
+    };
+
+
+    template<class T> struct RefPtr : public osg::ref_ptr<T> {
+
+        RefPtr() {}
+        RefPtr(T* ptr) : osg::ref_ptr<T>(ptr) {}
+        RefPtr(const RefPtr& rp) : osg::ref_ptr<T>(rp.get()) {}
+        template<class Other> RefPtr(const RefPtr<Other>& rp) : osg::ref_ptr<T>(osg::ref_ptr<Other>(rp.get())) {}
+        RefPtr(osg::observer_ptr<T>& optr) : osg::ref_ptr<T>(optr) {}
+        ~RefPtr() {}
+
+        RefPtr& operator = (const RefPtr& rp)
+        {
+            osg::ref_ptr<T>::operator =(rp);
+            return *this;
+        }
+
+        template<class Other> RefPtr& operator = (const RefPtr<Other>& rp)
+        {
+            osg::ref_ptr<T>::operator =(rp.get());
+            return *this;
+        }
+
+        inline RefPtr& operator = (T* ptr)
+        {
+            osg::ref_ptr<T>::operator =(ptr);
+            return *this;
+        }
+
+        template<class Other> RefPtr& operator = (Other *ptr)
+        {
+            osg::ref_ptr<T>::operator =(dynamic_cast<T*>(ptr));
+            return *this;
+        }
+
+#ifdef OSG_USE_REF_PTR_IMPLICIT_OUTPUT_CONVERSION
+        // implicit output conversion
+        operator T*() const { return osg::ref_ptr<T>::get(); }
+#endif
+
+        T& operator*() const { return *get(); }
+        T* operator->() const { return get(); }
+        T* get() const { return osg::ref_ptr<T>::get(); }
+
+        bool operator!() const   { return get()==0; } // not required
+        bool valid() const       { return get()!=0; }
+
+        T* release() { return osg::ref_ptr<T>::release(); }
+
+        void swap(RefPtr& rp) {osg::ref_ptr<T>::swap(rp); }
+
+    };
+
+    template<class T> struct ObsPtr : public osg::observer_ptr<T> {
+        ObsPtr() {}
+        ObsPtr(const RefPtr<T>& rp) : osg::observer_ptr<T>(rp.get()) {}
+        ObsPtr(T* rp) : osg::observer_ptr<T>(rp) {}
+
+        ObsPtr(const ObsPtr& wp) : osg::observer_ptr<T>(wp.get()) {}
+
+        ~ObsPtr(){}
+
+        ObsPtr& operator = (const ObsPtr& wp)
+        {
+            osg::observer_ptr<T>::operator =(wp);
+            return *this;
+        }
+
+        ObsPtr& operator = (const RefPtr<T>& rp)
+        {
+            osg::observer_ptr<T>::operator =(rp);
+            return *this;
+        }
+
+        ObsPtr& operator = (T* rp)
+        {
+            osg::observer_ptr<T>::operator =(rp);
+            return *this;
+        }
+
+        bool lock(RefPtr<T>& rptr) const
+        {
+            return osg::observer_ptr<T>::lock(rptr);
+        }
+
+        /** Comparison operators. These continue to work even after the
+         * observed object has been deleted.
+         */
+        bool operator == (const ObsPtr& wp) const { return osg::observer_ptr<T>::operator ==(wp); }
+        bool operator != (const ObsPtr& wp) const { return osg::observer_ptr<T>::operator !=(wp); }
+        bool operator < (const ObsPtr& wp) const { return osg::observer_ptr<T>::operator <(wp); }
+        bool operator > (const ObsPtr& wp) const { return osg::observer_ptr<T>::operator >(wp); }
+
+        // Convenience methods for operating on object, however, access is not automatically threadsafe.
+        // To make thread safe, one should either ensure at a high level
+        // that the object will not be deleted while operating on it, or
+        // by using the observer_ptr<>::lock() to get a ref_ptr<> that
+        // ensures the objects stay alive throughout all access to it.
+
+        // Throw an error if _reference is null?
+        inline T& operator*() const { return *get(); }
+        inline T* operator->() const { return get(); }
+
+        // get the raw C pointer
+        inline T* get() const { return osg::observer_ptr<T>::get(); }
+
+        inline bool operator!() const   { return get() == 0; }
+        inline bool valid() const       { return get() != 0; }
+
+
+    };
+#else
 
     /*!
      \short This class provides Reference counting objects. Instances should be used by the RefPtr class
@@ -60,9 +187,6 @@ namespace Step {
          */
         inline void ref() const
         {
-        #ifdef STEP_THREAD_SAFE
-            OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_refMutex);
-        #endif
             ++_refCount;
         }
 
@@ -76,9 +200,6 @@ namespace Step {
         inline void unref() const
         {
             {
-        #ifdef STEP_THREAD_SAFE
-                OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_refMutex);
-        #endif
                 --_refCount;
             }
             if (_refCount <= 0)
@@ -118,9 +239,6 @@ namespace Step {
         virtual ~Referenced();
 
     private:
-#ifdef STEP_THREAD_SAFE
-        mutable OpenThreads::Mutex _refMutex;
-#endif
         mutable int _refCount;
         void * _observers;
 
@@ -606,6 +724,6 @@ namespace Step {
         Referenced* _ptr;
     };
 
+#endif
 }
-
 #endif

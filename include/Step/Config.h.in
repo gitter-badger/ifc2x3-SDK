@@ -1,0 +1,16 @@
+#ifndef STEP_CONFIG_H
+#define STEP_CONFIG_H
+
+#define Step_VERSION_MAJOR ${Step_VERSION_MAJOR}
+#define Step_VERSION_MINOR ${Step_VERSION_MINOR}
+#define Step_VERSION_PATCH ${Step_VERSION_PATCH}
+#cmakedefine Step_VERSION_TWEAK ${Step_VERSION_TWEAK}
+
+#define Step_VERSION_STRING "${Step_VERSION_FULL}"
+#define Step_VERSION ((${Step_VERSION_MAJOR} << 16) + (${Step_VERSION_MINOR} << 8) + ${Step_VERSION_PATCH})
+#define Step_SYSTEM_STRING "${CMAKE_SYSTEM_NAME}"
+
+
+#cmakedefine STEP_THREAD_SAFE
+
+#endif // STEP_CONFIG_H

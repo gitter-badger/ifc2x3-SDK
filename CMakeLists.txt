@@ -15,11 +15,11 @@ ENDIF(NOT DEFINED LIB_POSTFIX)
 # The CMake version number.
 SET(ifc2x3_sdk_VERSION_MAJOR 1)
 SET(ifc2x3_sdk_VERSION_MINOR 0)
-SET(ifc2x3_sdk_VERSION_PATCH beta3)
+SET(ifc2x3_sdk_VERSION_PATCH beta4)
 SET(ifc2x3_sdk_VERSION "${ifc2x3_sdk_VERSION_MAJOR}.${ifc2x3_sdk_VERSION_MINOR}")
 SET(ifc2x3_sdk_VERSION_FULL "${ifc2x3_sdk_VERSION}.${ifc2x3_sdk_VERSION_PATCH}")
 
-SET(ifc2x3_sdk_SOVERSION 1)
+SET(ifc2x3_sdk_SOVERSION 2)
 
 
 if(NOT CMAKEMODULES_PATH)
@@ -121,7 +121,20 @@ if(PCHSupport_FOUND)
     option(ENABLE_PRECOMPILED_HEADER "Enable use of precompiled header to improve compile time" ON)
 endif()
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+option(STEP_THREAD_SAFE "Make Step object destruction thread safe, /!\ introduces OpenSceneGraph dependency" OFF)
+
+if(STEP_THREAD_SAFE)
+   set(LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
+   find_package(OpenSceneGraph)
+   if(NOT OPENSCENEGRAPH_FOUND)
+      message(WARNING "OpenSceneGraph not found, disabling STEP_THREAD_SAFE")
+      set(STEP_THREAD_SAFE OFF FORCE)
+   else()
+      include_directories(${OPENSCENEGRAPH_INCLUDE_DIR})
+   endif()
+endif()
+
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_subdirectory(src)
 add_subdirectory(doc EXCLUDE_FROM_ALL)

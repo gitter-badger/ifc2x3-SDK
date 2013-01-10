@@ -7,6 +7,9 @@
 // uncomment the following line to test compilation types checks
 // #define TEST_COMPILATION_ERRORS
 
+#ifndef LOG_DEBUG_ENABLE
+#define LOG_DEBUG_ENABLE
+#endif
 int main(int n, char **p)
 {
 	Step::RefPtr<ifc2x3::ExpressDataSet> eds ;
