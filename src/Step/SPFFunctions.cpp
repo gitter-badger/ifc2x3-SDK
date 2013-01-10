@@ -14,11 +14,11 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#include "Step/SPFFunctions.h"
-#include "Step/BaseExpressDataSet.h"
-#include "Step/ASCII_codes.h"
+#include <Step/SPFFunctions.h>
+#include <Step/BaseExpressDataSet.h>
+#include <Step/ASCII_codes.h>
 
-#include "Step/logger.h"
+#include <Step/logger.h>
 
 
 using namespace Step;

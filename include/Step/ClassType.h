@@ -17,7 +17,7 @@
 #ifndef Step_ClassType_h
 #define Step_ClassType_h
 
-#include "StepExport.h"
+#include <Step/StepExport.h>
 
 #include <map>
 #include <string>

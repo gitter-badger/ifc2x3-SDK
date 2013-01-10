@@ -14,7 +14,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#include "Step/logger.h"
+#include <Step/logger.h>
 
 #ifdef USE_LOG4CPLUS
 using namespace log4cplus;

@@ -17,7 +17,7 @@
 #ifndef Step_String_h
 #define Step_String_h
 
-#include "StepExport.h"
+#include <Step/StepExport.h>
 
 #include <string>
 #include <ostream>

@@ -14,8 +14,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#include "Step/ClientDataHandler.h"
-#include "Step/ClientData.h"
+#include <Step/ClientDataHandler.h>
+#include <Step/ClientData.h>
 
 using namespace Step;
 

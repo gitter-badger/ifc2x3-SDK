@@ -14,8 +14,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#include "Step/BaseEntity.h"
-#include "Step/BaseVisitor.h"
+#include <Step/BaseEntity.h>
+#include <Step/BaseVisitor.h>
 
 using namespace Step;
 

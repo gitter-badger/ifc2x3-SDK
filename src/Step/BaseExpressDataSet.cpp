@@ -14,14 +14,14 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#include "Step/BaseExpressDataSet.h"
-#include "Step/BaseEntity.h"
-#include "Step/BaseSPFObject.h"
-#include "Step/SPFHeader.h"
-#include "Step/SPFData.h"
-#include "Step/RefLinkedList.h"
+#include <Step/BaseExpressDataSet.h>
+#include <Step/BaseEntity.h>
+#include <Step/BaseSPFObject.h>
+#include <Step/SPFHeader.h>
+#include <Step/SPFData.h>
+#include <Step/RefLinkedList.h>
 
-#include "Step/logger.h"
+#include <Step/logger.h>
 
 #include <iostream>
 

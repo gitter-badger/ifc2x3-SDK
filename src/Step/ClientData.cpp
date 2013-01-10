@@ -14,7 +14,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#include "Step/ClientData.h"
+#include <Step/ClientData.h>
 
 std::string Step::ClientData::s_defaultName = "Unknown ClientData";
 std::string Step::ClientData::s_defaultDesc = "No Description";

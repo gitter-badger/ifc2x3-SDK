@@ -14,9 +14,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#include "Step/SPFData.h"
-#include "Step/BaseExpressDataSet.h"
-#include "Step/SPFFunctions.h"
+#include <Step/SPFData.h>
+#include <Step/BaseExpressDataSet.h>
+#include <Step/SPFFunctions.h>
 
 using namespace std;
 using namespace Step;

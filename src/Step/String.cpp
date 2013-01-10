@@ -14,10 +14,10 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
 
-#include "Step/String.h"
-#include "Step/ASCII_codes.h"
-#include "Step/SPFFunctions.h"
-#include "Step/SimpleTypes.h"
+#include <Step/String.h>
+#include <Step/ASCII_codes.h>
+#include <Step/SPFFunctions.h>
+#include <Step/SimpleTypes.h>
 
 using namespace Step;
 
