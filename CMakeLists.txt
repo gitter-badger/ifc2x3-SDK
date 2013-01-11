@@ -122,7 +122,7 @@ if(PCHSupport_FOUND)
     option(ENABLE_PRECOMPILED_HEADER "Enable use of precompiled header to improve compile time" ON)
 endif()
 
-option(STEP_THREAD_SAFE "Make Step object destruction thread safe, /!\ introduces OpenSceneGraph dependency" OFF)
+option(STEP_THREAD_SAFE "Make Step object destruction thread safe, /!\ introduces OpenSceneGraph dependency" ON)
 
 if(STEP_THREAD_SAFE)
    set(LIBRARY_OUTPUT_DIRECTORY ${LIBRARY_OUTPUT_PATH})
@@ -135,7 +135,7 @@ if(STEP_THREAD_SAFE)
    endif()
 endif()
 
-option(USE_LOG4CPLUS "Use log4cplus as a logger, /!\ introduces log4cplus dependency" OFF)
+option(USE_LOG4CPLUS "Use log4cplus as a logger, /!\ introduces log4cplus dependency" ON)
 if(USE_LOG4CPLUS)
    find_package(Log4cplus)
    if(NOT LOG4CPLUS_FOUND)
