@@ -1,0 +1,15 @@
+#ifndef IFC2X3_CONFIG_H
+#define IFC2X3_CONFIG_H
+
+#include <Step/Config.h>
+
+#define ifc2x3_sdk_VERSION_MAJOR ${ifc2x3_sdk_VERSION_MAJOR}
+#define ifc2x3_sdk_VERSION_MINOR ${ifc2x3_sdk_VERSION_MINOR}
+#define ifc2x3_sdk_VERSION_PATCH ${ifc2x3_sdk_VERSION_PATCH}
+#define ifc2x3_sdk_VERSION_TWEAK ${ifc2x3_sdk_VERSION_TWEAK}
+
+#define ifc2x3_sdk_VERSION_STRING "${ifc2x3_sdk_VERSION_FULL}"
+#define ifc2x3_sdk_VERSION ((${ifc2x3_sdk_VERSION_MAJOR} << 16) + (${ifc2x3_sdk_VERSION_MINOR} << 8) + ${ifc2x3_sdk_VERSION_PATCH})
+
+#endif // IFC2X3_CONFIG_H
+
